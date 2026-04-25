@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user identification and global settings.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "savingsMethod": { "type": "string", "enum": ["MTN MoMo", "Airtel Money", "SACCO", "Cash", "Bank"] },
+        "dailyIncome": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email"]
+    },
+    "Goal": {
+      "title": "Savings Goal",
+      "description": "A target the user is saving towards.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "completed", "paused"] }
+      },
+      "required": ["id", "userId", "title", "targetAmount", "currentAmount", "status"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "A record of money spent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "userId", "amount", "category", "date"]
+    },
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Recurring expenses like data or rent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "amount": { "type": "number" },
+        "billingCycle": { "type": "string" },
+        "nextBilling": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "name", "amount", "billingCycle"]
+    },
+    "Debt": {
+      "title": "Debt",
+      "description": "Outstanding loans or money owed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "amount": { "type": "number" },
+        "interestRate": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "name", "amount"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "History of messages with the AI Coach.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "role", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Primary user profile document."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "Individual savings goals for the user."
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Expense history for the user."
+    },
+    "/users/{userId}/subscriptions/{subId}": {
+      "schema": "Subscription",
+      "description": "Recurring payments."
+    },
+    "/users/{userId}/debts/{debtId}": {
+      "schema": "Debt",
+      "description": "Debts and loans tracker."
+    },
+    "/users/{userId}/chats/{chatId}": {
+      "schema": "ChatMessage",
+      "description": "Persistent chat logs."
+    }
+  }
+}

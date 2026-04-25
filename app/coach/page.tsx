@@ -1,25 +1,25 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import AppShell from '@/components/layout/AppShell';
+import { Topbar } from '@/components/layout/Topbar';
+import { AIMessage } from '@/components/ui/AIMessage';
 import { useApp } from '@/context/AppContext';
-import { streamMessage } from '@/lib/gemini';
-import { motion, AnimatePresence } from 'motion/react';
-import { Send, Sparkles, Trash2, Zap, MessageSquare, Bot } from 'lucide-react';
-import AIMessage from '@/components/ui/AIMessage';
-import TypingIndicator from '@/components/ui/TypingIndicator';
-import { cn } from '@/lib/utils';
+import { model } from '@/lib/gemini';
+import { Send, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 
-const SUGGESTED_PROMPTS = [
-  "How can I save UGX 1M in 3 months?",
-  "Audit my subscriptions for leaks",
-  "Avalanche vs Snowball for my debt?",
-  "Analyze my spending patterns",
-  "Ugandan side income ideas for 2024"
-];
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export default function CoachPage() {
-  const { state, dispatch } = useApp();
+  const { profile } = useApp();
+  const [messages, setMessages] = useState<Message[]>([
+    { 
+      role: 'assistant', 
+      content: `Kalyerere ${profile?.displayName?.split(' ')[0] || 'Saver'}! I'm Saver, your AI savings coach. I see you're saving for your future in UGX. How can I help you save more today? 🇺🇬` 
+    }
+  ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -28,137 +28,178 @@ export default function CoachPage() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [state.chatHistory, isTyping]);
+  }, [messages, isTyping]);
 
-  const handleSend = async (text: string = input) => {
-    if (!text.trim() || isTyping) return;
+  const handleSend = async () => {
+    if (!input.trim() || isTyping) return;
 
-    const userMessage = text.trim();
+    const userMsg = input.trim();
     setInput('');
-    dispatch.addChatMessage({ role: 'user', text: userMessage });
+    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setIsTyping(true);
 
     try {
-      let fullResponse = '';
-      const contextData = {
-        user: state.user,
-        income: state.income,
-        goals: state.goals,
-        expenses: state.expenses,
-        subscriptions: state.subscriptions,
-        debts: state.debts,
-        healthScore: state.healthScore
-      };
+      const systemPrompt = `
+        You are "Saver" — a friendly, wise, and encouraging AI savings coach built specifically for Ugandans.
+        USER PROFILE:
+        Name: ${profile?.displayName}
+        Daily Income: UGX ${profile?.dailyIncome || 'Not set'}
+        Savings Method: ${profile?.savingsMethod || 'Not set'}
 
-      const stream = streamMessage(userMessage, state.chatHistory, contextData);
-      
-      for await (const chunk of stream) {
-        fullResponse += chunk;
-      }
+        PERSONALITY:
+        - Warm, encouraging, never judgmental.
+        - Speak simply — no financial jargon.
+        - Use Ugandan context (UGX, MTN MoMo, school fees, medical bills, rent, boda boda, market vendors).
+        - Use emojis to feel friendly.
+        - Celebrate small wins (even 2,000 UGX).
+        - If the user writes in Luganda, respond in Luganda.
 
-      dispatch.addChatMessage({ role: 'model', text: fullResponse });
-    } catch (error) {
-      console.error(error);
-      dispatch.addChatMessage({ 
-        role: 'model', 
-        text: "I encountered a synchronization error in my analytical core. Please check your connection or retry your request." 
+        GOALS:
+        - Help set goals.
+        - Calculate loss to moneylender interest if applicable.
+        - Give a "financial health score" (0-100).
+        - Suggest micro-saving habits.
+
+        Keep responses under 150 words.
+        Current time: ${new Date().toLocaleString()}
+      `;
+
+      const chat = model.startChat({
+        history: messages.map(m => ({
+          role: m.role === 'user' ? 'user' : 'model',
+          parts: [{ text: m.content }],
+        })),
       });
+
+      const result = await chat.sendMessage([
+        { text: systemPrompt },
+        { text: userMsg }
+      ]);
+      const response = await result.response;
+      const text = response.text();
+
+      setMessages(prev => [...prev, { role: 'assistant', content: text }]);
+    } catch (err) {
+      console.error('AI Error:', err);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Oops, my network is a bit slow. Can you say that again, bambi? 😅" }]);
     } finally {
       setIsTyping(false);
     }
   };
 
   return (
-    <AppShell>
-      <div className="flex flex-col h-[calc(100vh-180px)] glass rounded-3xl overflow-hidden border border-border">
-        {/* Chat Header */}
-        <div className="p-6 border-b border-border bg-surface/50 backdrop-blur-md flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary border border-primary/20">
-                <Bot size={24} />
-             </div>
-             <div>
-                <h3 className="font-display font-black text-lg tracking-tighter uppercase">VAULT Coach v2.0</h3>
-                <div className="flex items-center gap-2">
-                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                   <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">System Online • Deep Logic Active</span>
-                </div>
-             </div>
+    <div className="flex flex-col h-screen">
+      <Topbar title="AI Savings Coach" />
+
+      <main className="flex-1 flex gap-8 p-8 min-h-0">
+        {/* Chat Section - Large as requested */}
+        <div className="flex-1 flex flex-col bg-surface border border-border rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+          <div className="p-6 border-b border-border flex items-center justify-between bg-surface/50 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold">Chat with Saver</h3>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">Always active</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setMessages([messages[0]])}
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
           </div>
-          <button 
-            onClick={() => dispatch.clearChat()}
-            className="p-2 text-text-muted hover:text-danger hover:bg-danger/5 rounded-xl transition-all"
+
+          <div 
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto p-8 space-y-4 scroll-smooth"
           >
-            <Trash2 size={20} />
-          </button>
-        </div>
+            {messages.map((m, i) => (
+              <AIMessage key={i} role={m.role} content={m.content} />
+            ))}
+            {isTyping && (
+              <div className="flex gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                </div>
+                <div className="p-6 rounded-3xl bg-surface border border-border text-muted-foreground italic">
+                  Saver is thinking...
+                </div>
+              </div>
+            )}
+          </div>
 
-        {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth bg-grid">
-           {state.chatHistory.length === 0 && (
-             <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-6">
-                <div className="w-20 h-20 bg-surface-2 rounded-3xl flex items-center justify-center shadow-2xl border border-border">
-                   <MessageSquare size={40} className="text-primary opacity-50" />
-                </div>
-                <div>
-                   <h2 className="text-2xl font-display font-black mb-2 uppercase tracking-tighter">Initialize Guidance</h2>
-                   <p className="text-sm text-text-muted">I am VAULT. Every recommendation I make is backed by your real-time UGX data patterns. How can I optimize your balance today?</p>
-                </div>
-                <div className="flex flex-wrap gap-2 justify-center">
-                   {SUGGESTED_PROMPTS.map((prompt) => (
-                     <button 
-                       key={prompt}
-                       onClick={() => handleSend(prompt)}
-                       className="px-4 py-2 bg-surface-2 border border-border rounded-full text-xs text-text-muted hover:border-primary hover:text-primary transition-all font-medium"
-                     >
-                       {prompt}
-                     </button>
-                   ))}
-                </div>
-             </div>
-           )}
-           {state.chatHistory.map((msg, i) => (
-             <AIMessage key={i} role={msg.role} text={msg.text} />
-           ))}
-           {isTyping && (
-             <div className="flex justify-start">
-               <div className="ai-bubble ai-bubble-tail">
-                 <TypingIndicator />
-               </div>
-             </div>
-           )}
-        </div>
-
-        {/* Input Area */}
-        <div className="p-6 bg-surface-2/50 backdrop-blur-md border-t border-border">
-           <div className="max-w-4xl mx-auto relative">
-              <input 
-                type="text" 
+          <div className="p-8 border-t border-border bg-surface/50">
+            <div className="flex gap-4 items-end bg-background border border-border rounded-[2rem] p-4 shadow-inner focus-within:border-primary transition-colors">
+              <textarea 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Ask VAULT about your goals, debt, or spending..."
-                className="w-full bg-background border border-border rounded-2xl py-4 pl-6 pr-32 outline-none focus:border-primary transition-all shadow-xl"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="Ask your coach anything... (e.g. How do I save for land?)"
+                className="flex-1 bg-transparent py-2 px-2 outline-none resize-none max-h-32 min-h-[48px] text-lg"
               />
-              <div className="absolute right-2 top-2 bottom-2 flex gap-2">
-                 <div className="flex items-center px-4 text-text-muted">
-                    <Zap size={16} className={cn(isTyping ? "text-primary" : "")} />
-                 </div>
-                 <button 
-                   onClick={() => handleSend()}
-                   disabled={!input.trim() || isTyping}
-                   className="px-6 bg-primary text-background font-bold rounded-xl hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-primary/20 flex items-center gap-2"
-                 >
-                   <Send size={18} />
-                   <span className="hidden md:block">Send</span>
-                 </button>
-              </div>
-           </div>
-           <p className="text-[10px] text-center text-text-muted mt-4 uppercase tracking-[0.2em] font-bold">
-             AI suggestions are advisory. Final financial decisions remain with the user.
-           </p>
+              <button 
+                onClick={handleSend}
+                disabled={!input.trim() || isTyping}
+                className="w-14 h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 shadow-lg shadow-primary/20"
+              >
+                <Send className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </AppShell>
+
+        {/* Sidebar Tips */}
+        <div className="w-80 space-y-6 hidden xl:block">
+          <div className="bg-primary/10 border border-primary/20 rounded-3xl p-6">
+            <h4 className="font-bold mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Suggested Topics
+            </h4>
+            <div className="space-y-2">
+              {[
+                "How much can I save on UGX 20k/day?",
+                "Are moneylenders dangerous?",
+                "Best way to save for land",
+                "How to use MTN MoMo to save"
+              ].map((topic, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => setInput(topic)}
+                  className="w-full text-left p-3 text-sm rounded-xl bg-surface border border-border hover:bg-surface-hover hover:border-primary transition-all text-muted-foreground hover:text-foreground"
+                >
+                  {topic}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-surface border border-border rounded-3xl p-6">
+            <h4 className="font-bold mb-2">Financial Health Score</h4>
+            <div className="relative h-4 bg-background rounded-full overflow-hidden mt-4">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-amber-500 to-primary" />
+              <div 
+                className="absolute top-0 bottom-0 right-0 bg-surface border-l border-border" 
+                style={{ width: '40%' }} 
+              />
+            </div>
+            <div className="flex justify-between mt-2">
+              <span className="text-xl font-bold font-display tracking-tight lowercase">60/100</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-widest">Improving</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+              You&apos;re doing great! Saving consistently for 2 weeks will boost your score to 75.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }

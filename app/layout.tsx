@@ -1,26 +1,37 @@
-import type { Metadata } from 'next';
-import { Inter, Syne, Outfit, Fira_Code } from 'next/font/google';
-import './globals.css';
-import { AppProvider } from '@/context/AppContext';
+import type { Metadata } from "next";
+import { Syne, Outfit, JetBrains_Mono } from "next/font/google";
+import "./globals.css";
+import { AppProvider } from "@/context/AppContext";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit' });
-const syne = Syne({ subsets: ['latin'], variable: '--font-syne' });
-const firaCode = Fira_Code({ subsets: ['latin'], variable: '--font-mono' });
+const syne = Syne({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
-  title: 'VAULT — AI Saving Coach',
-  description: 'Elite AI-powered personal saving coach for Ugandan users.',
+  title: "VAULT | AI Savings Coach",
+  description: "Smart savings coach for Ugandans",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable} ${syne.variable} ${firaCode.variable}`}>
-      <body suppressHydrationWarning className="bg-background text-text overflow-x-hidden min-h-screen">
+    <html lang="en">
+      <body className={`${syne.variable} ${outfit.variable} ${jetbrainsMono.variable} antialiased`}>
         <AppProvider>
-          <div className="blob blob-primary" />
-          <div className="blob blob-secondary" />
-          <div className="bg-grid absolute inset-0 z-[-2] opacity-50" />
           {children}
         </AppProvider>
       </body>

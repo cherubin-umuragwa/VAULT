@@ -1,6 +1,9 @@
 {
   "name": "VAULT",
-  "description": "Elite AI-powered personal saving coach for Ugandan users.",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "description": "An AI-powered Personal Saving Coach for Ugandans, helping you save in UGX with smart insights and planning.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
 }

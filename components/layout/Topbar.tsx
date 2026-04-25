@@ -1,57 +1,54 @@
 'use client';
 
 import React from 'react';
-import { Bell, Search, User, Flag } from 'lucide-react';
-import { usePathname } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { Bell, Search } from 'lucide-react';
+import Image from 'next/image';
 
-const routeNames: { [key: string]: string } = {
-  '/dashboard': 'Financial Overview',
-  '/coach': 'VAULT AI Coach',
-  '/goals': 'Saving Goals',
-  '/budget': 'Budget & Spending',
-  '/subscriptions': 'Subscription Audit',
-  '/debt': 'Debt Payoff Plan',
-  '/simulator': 'Scenario Simulator',
-  '/report': 'Wealth Intelligence',
-  '/crisis': 'Crisis Management',
-};
-
-export default function Topbar() {
-  const pathname = usePathname();
-  const { state } = useApp();
-  const pageTitle = routeNames[pathname] || 'VAULT';
+export function Topbar({ title }: { title: string }) {
+  const { profile } = useApp();
 
   return (
-    <header className="h-20 bg-background/50 backdrop-blur-xl border-b border-border sticky top-0 z-40 flex items-center justify-between px-8">
+    <header className="h-20 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-10 px-8 flex items-center justify-between">
       <div>
-        <h1 className="text-xl clash-style text-text">{pageTitle}</h1>
-        <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-0.5">Control Panel • {state.user.name || 'Investor'}</p>
+        <h2 className="text-2xl font-display font-bold tracking-tight lowercase">{title}</h2>
+        <p className="text-sm text-muted-foreground">Welcome back, {profile?.displayName?.split(' ')[0] || 'Saver'}</p>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-surface-2 rounded-full border border-border">
-          <div className="w-5 h-3 bg-red-600 relative overflow-hidden rounded-sm">
-             <div className="absolute top-1/3 left-0 w-full h-1/3 bg-black"></div>
-             <div className="absolute bottom-0 left-0 w-full h-1/3 bg-yellow-400"></div>
-          </div>
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">UGX</span>
+      <div className="flex items-center gap-6">
+        <div className="relative hidden md:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input 
+            type="text" 
+            placeholder="Search transactions..."
+            className="pl-10 pr-4 py-2 bg-surface border border-border rounded-full text-sm focus:outline-none focus:border-primary transition-colors w-64"
+          />
         </div>
-
-        <button className="p-2 text-text-muted hover:text-text hover:bg-surface-2 rounded-xl transition-all">
-          <Search size={20} />
+        
+        <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
         </button>
 
-        <button className="p-2 text-text-muted hover:text-text hover:bg-surface-2 rounded-xl transition-all relative">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-surface"></span>
-        </button>
-
-        <div className="h-8 w-[1px] bg-border mx-2"></div>
-
-        <div className="flex items-center gap-3 pl-2">
-          <div className="w-10 h-10 rounded-full bg-surface-2 border border-border flex items-center justify-center p-1">
-             <div className="w-full h-full rounded-full bg-gradient-to-tr from-primary to-secondary opacity-80"></div>
+        <div className="flex items-center gap-3 pl-4 border-l border-border">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold leading-none">{profile?.displayName || 'User'}</p>
+            <p className="text-xs text-muted-foreground leading-none mt-1">Free Plan</p>
+          </div>
+          <div className="w-10 h-10 rounded-full border border-border overflow-hidden bg-surface relative">
+            {profile?.photoURL ? (
+              <Image 
+                src={profile.photoURL} 
+                alt="Avatar" 
+                fill 
+                className="object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-primary font-bold">
+                {profile?.displayName?.[0] || 'U'}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,105 +1,82 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useApp } from '@/context/AppContext';
+import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
-  MessageSquareQuote, 
   Target, 
-  PieChart, 
+  Receipt, 
   CreditCard, 
-  TrendingUp, 
-  FileText, 
-  ShieldAlert,
-  ChevronLeft,
-  ChevronRight,
-  Bot,
-  Brain,
-  Sparkles
+  MessageSquare, 
+  Settings, 
+  LogOut, 
+  Sun, 
+  Moon,
+  Wallet
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 const navItems = [
-  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { name: 'VAULT Coach', icon: MessageSquareQuote, path: '/coach' },
-  { name: 'Saving Goals', icon: Target, path: '/goals' },
-  { name: 'Budgeting', icon: PieChart, path: '/budget' },
-  { name: 'Subscriptions', icon: CreditCard, path: '/subscriptions' },
-  { name: 'Debt Planner', icon: TrendingUp, path: '/debt' },
-  { name: 'Simulator', icon: Sparkles, path: '/simulator' },
-  { name: 'Wealth Report', icon: FileText, path: '/report' },
-  { name: 'Crisis Mode', icon: ShieldAlert, path: '/crisis' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: Target, label: 'Goals', href: '/goals' },
+  { icon: Receipt, label: 'Expenses', href: '/expenses' },
+  { icon: CreditCard, label: 'Debts', href: '/debts' },
+  { icon: MessageSquare, label: 'AI Coach', href: '/coach' },
+  { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
-export default function Sidebar() {
+export function Sidebar() {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const { theme, setTheme } = useApp();
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isCollapsed ? 80 : 260 }}
-      className="fixed left-0 top-0 h-screen bg-surface border-r border-border z-50 flex flex-col transition-all duration-300"
-    >
-      <div className="p-6 flex items-center justify-between">
-        {!isCollapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-background font-bold text-xl">V</span>
-            </div>
-            <span className="font-display font-bold text-2xl tracking-tighter text-text">VAULT</span>
-          </Link>
-        )}
-        {isCollapsed && (
-           <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center mx-auto">
-             <span className="text-primary font-bold text-lg">V</span>
-           </div>
-        )}
+    <aside className="w-64 border-r border-border h-screen flex flex-col bg-surface sticky top-0">
+      <div className="p-6 flex items-center gap-3">
+        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+          <Wallet className="text-primary-foreground w-6 h-6" />
+        </div>
+        <span className="text-2xl font-display font-bold tracking-tight">VAULT</span>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 py-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive = pathname === item.href;
           return (
-            <SidebarLink 
-              key={item.path} 
-              item={item} 
-              isActive={isActive} 
-              isCollapsed={isCollapsed} 
-            />
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-all group",
+                isActive && "nav-active-border text-foreground text-primary font-medium"
+              )}
+            >
+              <item.icon className={cn("w-5 h-5 transition-colors", isActive && "text-primary")} />
+              <span className="text-sm font-medium">{item.label}</span>
+            </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-border space-y-1">
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-text-muted hover:bg-surface-2 hover:text-text transition-all"
+      <div className="p-4 border-t border-border space-y-2">
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:text-foreground transition-all"
         >
-          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          {!isCollapsed && <span className="text-sm font-medium">Collapse Sidebar</span>}
+          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          <span className="text-sm font-medium">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
+        <button
+          onClick={() => signOut(auth)}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all font-medium"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="text-sm">Log out</span>
         </button>
       </div>
-    </motion.aside>
-  );
-}
-
-// Fixed Sidebar Item to avoid broken LinkNext usage
-function SidebarLink({ item, isActive, isCollapsed }: { item: any; isActive: boolean; isCollapsed: boolean }) {
-  return (
-    <Link
-      href={item.path}
-      className={cn(
-        "flex items-center gap-3 px-3 py-3 rounded-none transition-all duration-200 group relative border-l-4",
-        isActive 
-          ? "bg-primary/5 text-primary border-primary" 
-          : "text-text-muted hover:bg-surface-2 hover:text-text border-transparent"
-      )}
-    >
-      <item.icon size={20} className={cn(isActive ? "text-primary" : "text-text-muted group-hover:text-text")} />
-      {!isCollapsed && <span className="text-sm font-medium truncate">{item.name}</span>}
-    </Link>
+    </aside>
   );
 }

@@ -2,45 +2,53 @@
 
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { Bot, User } from 'lucide-react';
+import { User, Sparkles } from 'lucide-react';
 
 interface AIMessageProps {
-  role: 'user' | 'model';
-  text: string;
+  role: 'user' | 'assistant';
+  content: string;
 }
 
-export default function AIMessage({ role, text }: AIMessageProps) {
-  const isModel = role === 'model';
+export function AIMessage({ role, content }: AIMessageProps) {
+  const isAI = role === 'assistant';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10, x: isModel ? -10 : 10 }}
-      animate={{ opacity: 1, y: 0, x: 0 }}
-      className={cn(
-        "flex gap-4 w-full mb-6",
-        isModel ? "flex-row" : "flex-row-reverse"
+    <div className={cn(
+      "flex w-full gap-4 mb-8",
+      isAI ? "justify-start" : "justify-end"
+    )}>
+      {isAI && (
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 shadow-sm">
+          <Sparkles className="w-6 h-6 text-primary" />
+        </div>
       )}
-    >
-      <div className={cn(
-        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border border-border shadow-lg",
-        isModel ? "bg-primary/20 text-primary" : "bg-secondary/20 text-secondary"
-      )}>
-        {isModel ? <Bot size={20} /> : <User size={20} />}
-      </div>
 
       <div className={cn(
-        "max-w-[80%] md:max-w-[70%]",
-        isModel ? "ai-bubble ai-bubble-tail" : "bg-surface border border-border p-4 rounded-2xl"
+        "max-w-[85%] relative",
+        isAI ? "text-left" : "text-right"
       )}>
-        <div className="prose prose-invert prose-sm max-w-none prose-emerald prose-p:leading-relaxed prose-pre:bg-background/50">
-          <ReactMarkdown>{text}</ReactMarkdown>
+        <div className={cn(
+          "p-6 rounded-3xl shadow-xl text-lg leading-relaxed",
+          isAI 
+            ? "bg-surface border border-border text-foreground" 
+            : "bg-primary text-primary-foreground font-medium"
+        )}>
+          <div className="prose prose-invert max-w-none">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
+          {isAI && <div className="ai-bubble-tail" />}
         </div>
-        <div className="mt-2 flex items-center justify-between opacity-50">
-           <span className="text-[10px] font-bold uppercase tracking-widest">{isModel ? 'Vault System' : 'Verified User'}</span>
-        </div>
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-2 px-2">
+          {isAI ? 'Saver AI Coach' : 'You'} • Just now
+        </p>
       </div>
-    </motion.div>
+
+      {!isAI && (
+        <div className="w-12 h-12 rounded-2xl bg-surface border border-border flex items-center justify-center shrink-0 shadow-sm">
+          <User className="w-6 h-6 text-muted-foreground" />
+        </div>
+      )}
+    </div>
   );
 }
