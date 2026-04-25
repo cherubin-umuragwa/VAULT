@@ -36,7 +36,10 @@ service cloud.firestore {
                     && isValidId(userId)
                     && incoming().userId == userId
                     && incoming().email is string
-                    && (incoming().dailyIncome == null || incoming().dailyIncome is number);
+                    && (incoming().dailyIncome == null || incoming().dailyIncome is number)
+                    && (incoming().displayName == null || incoming().displayName is string)
+                    && (incoming().photoURL == null || incoming().photoURL is string)
+                    && (incoming().updatedAt == null || incoming().updatedAt is string);
       allow update: if isOwner(userId)
                     && incoming().userId == userId
                     && incoming().email == existing().email

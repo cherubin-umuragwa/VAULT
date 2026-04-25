@@ -43,7 +43,7 @@ export default function LandingPage() {
           onClick={handleLogin}
           className="px-6 py-2 bg-surface border border-border rounded-full hover:bg-surface-hover transition-colors font-medium"
         >
-          enter vault
+          login
         </button>
       </nav>
 
